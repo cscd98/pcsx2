@@ -25,6 +25,13 @@ option(PACKAGE_MODE "Use this option to ease packaging of PCSX2 (developer/distr
 set(ARMSX2_VERSION "" CACHE STRING "Reported version for builds without a git checkout")
 option(BUNDLE_EMOJI_FONT "Bundles Noto Color Emoji for systems whose system emoji font isn't usable by freetype" ON)
 option(POSITION_INDEPENDENT_CODE "Generate position-independent code. It is recommended that you leave this on." ON)
+option(BUILD_DEPENDENCIES "Enables building dependencies" OFF)
+
+if(BUILD_DEPENDENCIES)
+	option(BUILD_DEPENDENCIES_AS_SHARED_LIBS "Build dependencies as shared libraries" ON)
+else()
+	set(BUILD_DEPENDENCIES_AS_SHARED_LIBS OFF)
+endif()
 
 # iOS and tvOS are Apple but not macOS, and the difference decides a few things
 # here and in 3rdparty: no AppKit, no IOKit, no AudioHardware, no optical drive.
