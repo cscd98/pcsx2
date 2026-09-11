@@ -178,10 +178,14 @@ elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "arm64" OR "${CMAKE_SYSTEM_PROCESSOR
 	# If we're running on Linux, we need to detect the page/cache line size.
 	# It could be a virtual machine with 4K pages, or 16K with Asahi.
 	if(LINUX)
-		detect_page_size()
-		list(APPEND PCSX2_DEFS OVERRIDE_HOST_PAGE_SIZE=${HOST_PAGE_SIZE})
-		detect_cache_line_size()
-		list(APPEND PCSX2_DEFS OVERRIDE_HOST_CACHE_LINE_SIZE=${HOST_CACHE_LINE_SIZE})
+		if(CMAKE_CROSSCOMPILING)
+			# Cannot execute target binaries during a cross compile.
+			set(HOST_PAGE_SIZE ${HOST_PAGE_SIZE})
+			set(HOST_CACHE_LINE_SIZE 64)
+		else()
+			detect_page_size()
+			detect_cache_line_size()
+		endif()
 	endif()
 
 	# Android is neither LINUX nor WIN32 to CMake, so without this branch it
