@@ -1813,7 +1813,7 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game)
 			unsigned major;
 			unsigned minor;
 		};
-#if defined(__ANDROID__) || defined(USE_GLES)
+//#if defined(__ANDROID__) || defined(USE_GLES)
 		// RETRO_HW_CONTEXT_OPENGLES3 is ES 3.0 by definition and ignores the
 		// minor entirely - libretro.h says so in as many words. ES 3.1 and
 		// above have to go through RETRO_HW_CONTEXT_OPENGLES_VERSION, and
@@ -1825,7 +1825,7 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game)
 			{RETRO_HW_CONTEXT_OPENGLES_VERSION, 3, 1},
 			{RETRO_HW_CONTEXT_OPENGLES3, 3, 0},
 		};
-#else
+/*#else
 		// GSDeviceOGL needs 3.3 at the very least and uses the 4.3 and 4.5
 		// paths when the driver has them - which it only can if the context is
 		// one of those in the first place.
@@ -1836,7 +1836,7 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game)
 			{RETRO_HW_CONTEXT_OPENGL_CORE, 4, 3},
 			{RETRO_HW_CONTEXT_OPENGL_CORE, 3, 3},
 		};
-#endif
+#endif*/
 		s_gl_hw_render.context_reset = OnGLContextReset;
 		s_gl_hw_render.context_destroy = OnGLContextDestroy;
 		s_gl_hw_render.depth = false;
