@@ -74,6 +74,8 @@
         -DHOST_PAGE_SIZE=4096
         -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
         -DBUILD_DEPENDENCIES=ON
+        -DUSE_GLES=ON
+        -DUSE_VULKAN=OFF
 
   before_script:
     # The ci-template's script builds with `-j $NUMPROC`; its before_script
