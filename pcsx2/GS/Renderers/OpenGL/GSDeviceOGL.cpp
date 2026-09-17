@@ -1717,12 +1717,14 @@ void GSDeviceOGL::PopTimestampQuery()
 {
 	while (m_waiting_timestamp_queries > 0)
 	{
-#if defined(__ANDROID__) || defined(USE_GLES)
-		// GLES doesn't expose glGetQueryObjectiv / glGetQueryObjectui64v; both
-		// availability and result use the u32 form. Caps at ~4.29s of
-		// nanoseconds — fine for per-frame timing. Provided by the
-		// EXT_disjoint_timer_query extension (GL_TIME_ELAPSED_EXT === 0x88BF
-		// === GL_TIME_ELAPSED here).
+		// Which reader exists is a property of the context, not of the platform
+		// this was compiled for. GLES has no glGetQueryObjectiv and no
+		// glGetQueryObjectui64v - both availability and result come back
+		// through the u32 form - and asking GLAD for the missing ones returns
+		// null, which is a call through address zero on the GS thread. That
+		// used to be gated on __ANDROID__, which held only while Android was
+		// the one GLES host; a GLES build on any other system took the desktop
+		// branch and crashed in EndPresent the first time a frame ended.
 		//
 		// The u32 result caps at ~4.29s of nanoseconds, which is fine for
 		// per-frame timing, and comes from EXT_disjoint_timer_query
