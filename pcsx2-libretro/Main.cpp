@@ -1438,6 +1438,9 @@ static GLuint s_gl_present_fbo = 0;
 
 static void OnGLContextReset(void)
 {
+	fprintf(stderr, "OnGLContextReset\n");
+	fflush(stderr);
+
 	// Runs on: the frontend's video thread, with its context current.
 	Error error;
 	if (!GLLibretro::CaptureFrontendContext(&error))
@@ -1463,6 +1466,8 @@ static void OnGLContextReset(void)
 
 static void OnGLContextDestroy(void)
 {
+	fprintf(stderr, "OnGLContextDestroy\n");
+	fflush(stderr);
 	// Runs on: the frontend's video thread, before the frontend destroys its
 	// context, while the GS thread keeps going. Stop the handoff first so the
 	// GS thread cannot park waiting for a retro_run that is not coming, then

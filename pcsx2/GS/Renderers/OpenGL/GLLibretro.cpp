@@ -43,6 +43,7 @@ namespace GLLibretro
 
 	bool CaptureFrontendContext(Error* error)
 	{
+		fprintf(stderr, "Libretro - CaptureFrontendContext()\n");
 		ReleaseFrontendContext();
 
 #if defined(_WIN32)
@@ -69,10 +70,14 @@ namespace GLLibretro
 			s_share_is_gles = egl_is_gles;
 			Console.WriteLnFmt("GL: Captured the frontend's EGL context ({}).",
 				egl_is_gles ? "OpenGL ES" : "desktop OpenGL");
+			fprintf(stderr, "Libretro - CaptureFrontendContext() - Backend::EGL is gles:%d\n", egl_is_gles);
 			return true;
 		}
 
 #endif
+
+		fprintf(stderr, "Libretro - CaptureFrontendContext() - No GL context was current on the frontend thread\n");
+		ReleaseFrontendContext();
 
 		Error::SetStringView(error,
 			"No GL context was current on the frontend thread. An X11 frontend hands out a GLX "
@@ -97,6 +102,9 @@ namespace GLLibretro
 	std::unique_ptr<GLContext> CreateSharedContext(
 		const WindowInfo& wi, std::span<const GLContext::Version> versions_to_try, Error* error)
 	{
+		fprintf(stderr, "Libretro - CreateSharedContext() s_share_is_gles: %d\n", s_share_is_gles);
+		fflush(stderr);
+
 		// Keep only the profile the frontend's context uses. Sharing across
 		// client APIs is not a thing, and trying the wrong ones first just
 		// spends a failed eglCreateContext on each.
@@ -110,6 +118,10 @@ namespace GLLibretro
 		}
 		if (matching.empty())
 		{
+			fprintf(stderr, "Libretro - CreateSharedContext() No context versions match the frontend's client API\n");
+			fflush(stderr);
+
+
 			Error::SetStringView(error, "No context versions match the frontend's client API");
 			return nullptr;
 		}
@@ -123,10 +135,15 @@ namespace GLLibretro
 					wi, static_cast<HGLRC>(s_share_context), versions_to_try, error);
 #else
 			case Backend::EGL:
+						fprintf(stderr, "Libretro - CreateSharedContext() Backend::EGL\n");
+			fflush(stderr);
+
 				return GLContextEGL::CreateShared(wi, s_display, s_share_context, versions_to_try, error);
 #endif
 
 			default:
+				fprintf(stderr, "Libretro - CreateSharedContext() The frontend's GL context was never captured\n");
+				fflush(stderr);
 				Error::SetStringView(error, "The frontend's GL context was never captured");
 				return nullptr;
 		}
@@ -148,6 +165,9 @@ namespace GLLibretro
 
 	void PublishFrame(const Frame& frame)
 	{
+		fprintf(stderr, "Libretro - PublishFrame\n");
+		ReleaseFrontendContext();
+
 		std::unique_lock<std::mutex> lock(s_frame_mutex);
 
 		// A frame nobody picked up (pacing off, or the frontend tore its
@@ -167,6 +187,7 @@ namespace GLLibretro
 
 	bool ConsumeFrame(Frame* out_frame)
 	{
+		//fprintf(stderr, "Libretro - ConsumeFrame()\n");
 		std::lock_guard<std::mutex> lock(s_frame_mutex);
 		if (s_frame_serial == s_frame_consumed || s_frame.texture == 0)
 			return false;

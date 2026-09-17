@@ -96,6 +96,8 @@ static bool LoadGLADEGL(EGLDisplay display, Error* error)
 GLContextEGL::GLContextEGL(const WindowInfo& wi)
 	: GLContext(wi)
 {
+	fprintf(stderr, "GLContextEGL()\n");
+	fflush(stderr);
 	LoadEGL();
 }
 
@@ -109,6 +111,9 @@ GLContextEGL::~GLContextEGL()
 std::unique_ptr<GLContext> GLContextEGL::Create(const WindowInfo& wi, std::span<const Version> versions_to_try,
 	Error* error)
 {
+	fprintf(stderr, "GLContextEGL::Create()\n");
+	fflush(stderr);
+
 	std::unique_ptr<GLContextEGL> context = std::make_unique<GLContextEGL>(wi);
 	if (!context->Initialize(versions_to_try, error))
 		return nullptr;
@@ -118,6 +123,9 @@ std::unique_ptr<GLContext> GLContextEGL::Create(const WindowInfo& wi, std::span<
 
 bool GLContextEGL::CaptureCurrentContext(EGLDisplay* display, EGLContext* context, bool* is_gles)
 {
+	fprintf(stderr, "GLContextEGL::CaptureCurrentContext()\n");
+	fflush(stderr);
+
 	// Runs on: the frontend's video thread, from context_reset, and before any
 	// GLContextEGL exists - so EGL has to be brought up by hand here, and stays
 	// up: the handles handed back outlive this call, and a frontend that cycles
@@ -160,6 +168,9 @@ bool GLContextEGL::CaptureCurrentContext(EGLDisplay* display, EGLContext* contex
 	EGLint client_type = EGL_OPENGL_API;
 	if (!eglQueryContext(current_display, current_context, EGL_CONTEXT_CLIENT_TYPE, &client_type))
 	{
+			fprintf(stderr, "eglQueryContext(EGL_CONTEXT_CLIENT_TYPE) failed\n");
+	fflush(stderr);
+
 		Console.WarningFmt("eglQueryContext(EGL_CONTEXT_CLIENT_TYPE) failed: 0x{:x}; assuming desktop GL.",
 			eglGetError());
 		client_type = EGL_OPENGL_API;
@@ -175,6 +186,9 @@ bool GLContextEGL::CaptureCurrentContext(EGLDisplay* display, EGLContext* contex
 std::unique_ptr<GLContext> GLContextEGL::CreateShared(const WindowInfo& wi, EGLDisplay display,
 	EGLContext share_context, std::span<const Version> versions_to_try, Error* error)
 {
+	fprintf(stderr, "GLContextEGL::CreateShared()\n");
+	fflush(stderr);
+
 	std::unique_ptr<GLContextEGL> context = std::make_unique<GLContextEGL>(wi);
 	context->m_display = display;
 
@@ -196,6 +210,10 @@ std::unique_ptr<GLContext> GLContextEGL::CreateShared(const WindowInfo& wi, EGLD
 
 bool GLContextEGL::Initialize(std::span<const Version> versions_to_try, Error* error)
 {
+	fprintf(stderr, "GLContextEGL::Initialize()\n");
+	fflush(stderr);
+
+
 	if (!LoadGLADEGL(EGL_NO_DISPLAY, error))
 		return false;
 
@@ -240,6 +258,9 @@ EGLNativeWindowType GLContextEGL::GetNativeWindow(EGLConfig config)
 
 bool GLContextEGL::SetDisplay()
 {
+	fprintf(stderr, "GLContextEGL::SetDisplay()\n");
+	fflush(stderr);
+
 #if defined(__ANDROID__)
 	// Android has no Mesa platform-display path, so bind the default display up front.
 	// On desktop this is a no-op so GetPlatformDisplay() below stays authoritative and
@@ -624,7 +645,7 @@ bool GLContextEGL::CreateContext(const Version& version, EGLContext share_contex
 		 ((version.major_version == 2) ? EGL_OPENGL_ES2_BIT : EGL_OPENGL_ES_BIT)) :
 		EGL_OPENGL_BIT;
 	surface_attribs[nsurface_attribs++] = EGL_SURFACE_TYPE;
-	surface_attribs[nsurface_attribs++] = (m_wi.type != WindowInfo::Type::Surfaceless) ? EGL_WINDOW_BIT : 0;
+	surface_attribs[nsurface_attribs++] = (m_wi.type != WindowInfo::Type::Surfaceless) ? EGL_WINDOW_BIT : EGL_PBUFFER_BIT;
 	surface_attribs[nsurface_attribs++] = EGL_RED_SIZE;
 	surface_attribs[nsurface_attribs++] = 8;
 	surface_attribs[nsurface_attribs++] = EGL_GREEN_SIZE;
@@ -709,6 +730,23 @@ bool GLContextEGL::CreateContext(const Version& version, EGLContext share_contex
 
 	m_config = config.value();
 	m_version = version;
+
+	{
+		EGLint dbg_surface_type = 0;
+		eglGetConfigAttrib(m_display, m_config, EGL_SURFACE_TYPE, &dbg_surface_type);
+		Console.WriteLnFmt("EGL: chosen config surface_type=0x{:x} (window={} pbuffer={} pixmap={})",
+			static_cast<unsigned>(dbg_surface_type),
+			(dbg_surface_type & EGL_WINDOW_BIT) != 0,
+			(dbg_surface_type & EGL_PBUFFER_BIT) != 0,
+			(dbg_surface_type & EGL_PIXMAP_BIT) != 0);
+		fprintf(stderr, "EGL: chosen config surface_type=0x%x (window=%d pbuffer=%d pixmap=%d)\n",
+			static_cast<unsigned>(dbg_surface_type),
+			(dbg_surface_type & EGL_WINDOW_BIT) != 0,
+			(dbg_surface_type & EGL_PBUFFER_BIT) != 0,
+			(dbg_surface_type & EGL_PIXMAP_BIT) != 0);
+		fflush(stderr);
+	}
+
 	return true;
 }
 
