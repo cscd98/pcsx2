@@ -1717,7 +1717,7 @@ void GSDeviceOGL::PopTimestampQuery()
 {
 	while (m_waiting_timestamp_queries > 0)
 	{
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(USE_GLES)
 		// GLES doesn't expose glGetQueryObjectiv / glGetQueryObjectui64v; both
 		// availability and result use the u32 form. Caps at ~4.29s of
 		// nanoseconds — fine for per-frame timing. Provided by the
