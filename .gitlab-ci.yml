@@ -53,6 +53,7 @@
 .core-defs-linux:
   extends: .core-defs
   variables:
+      STRIP_CORE_LIB: 0
       CORE_ARGS: >-
         -DCMAKE_C_COMPILER=clang
         -DCMAKE_CXX_COMPILER=clang++
