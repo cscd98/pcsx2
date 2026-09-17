@@ -1724,30 +1724,33 @@ void GSDeviceOGL::PopTimestampQuery()
 		// EXT_disjoint_timer_query extension (GL_TIME_ELAPSED_EXT === 0x88BF
 		// === GL_TIME_ELAPSED here).
 		//
-		// Prior version of this branch was broken: it called glBeginQuery on
-		// the read slot then immediately tried to read its result (always 0,
-		// query never ended) and incremented m_waiting_timestamp_queries
-		// instead of decrementing — accumulator stayed stuck at 0 in HW
-		// renderer OSD ("GPU: 0%" symptom).
-		GLuint available = 0;
-		glGetQueryObjectuiv(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT_AVAILABLE, &available);
-		if (!available)
-			break;
+		// The u32 result caps at ~4.29s of nanoseconds, which is fine for
+		// per-frame timing, and comes from EXT_disjoint_timer_query
+		// (GL_TIME_ELAPSED_EXT is GL_TIME_ELAPSED here).
+		if (m_is_gles)
+		{
+			GLuint available = 0;
+			glGetQueryObjectuiv(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT_AVAILABLE, &available);
+			if (!available)
+				break;
 
-		GLuint result = 0;
-		glGetQueryObjectuiv(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT, &result);
-		m_accumulated_gpu_time += static_cast<float>(static_cast<double>(result) / 1000000.0);
-#else
-		GLint available = 0;
-		glGetQueryObjectiv(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT_AVAILABLE, &available);
+			GLuint result = 0;
+			glGetQueryObjectuiv(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT, &result);
+			m_accumulated_gpu_time += static_cast<float>(static_cast<double>(result) / 1000000.0);
+		}
+		else
+		{
+			GLint available = 0;
+			glGetQueryObjectiv(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT_AVAILABLE, &available);
 
-		if (!available)
-			break;
+			if (!available)
+				break;
 
-		u64 result = 0;
-		glGetQueryObjectui64v(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT, &result);
-		m_accumulated_gpu_time += static_cast<float>(static_cast<double>(result) / 1000000.0);
-#endif
+			u64 result = 0;
+			glGetQueryObjectui64v(m_timestamp_queries[m_read_timestamp_query], GL_QUERY_RESULT, &result);
+			m_accumulated_gpu_time += static_cast<float>(static_cast<double>(result) / 1000000.0);
+		}
+
 		m_read_timestamp_query = (m_read_timestamp_query + 1) % NUM_TIMESTAMP_QUERIES;
 		m_waiting_timestamp_queries--;
 	}
@@ -1772,6 +1775,13 @@ void GSDeviceOGL::KickTimestampQuery()
 
 bool GSDeviceOGL::SetGPUTimingEnabled(bool enabled)
 {
+	// Timed queries on GLES are EXT_disjoint_timer_query and nothing else, so
+	// a context without it has no GL_TIME_ELAPSED to begin and no result to
+	// read. Refusing here is what stops the frame path from starting queries
+	// that can only fail.
+	if (enabled && m_is_gles && !GLAD_GL_EXT_disjoint_timer_query)
+		return false;
+
 	if (m_gpu_timing_enabled == enabled)
 		return true;
 
