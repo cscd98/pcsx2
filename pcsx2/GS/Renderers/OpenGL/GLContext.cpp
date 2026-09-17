@@ -41,6 +41,10 @@ GLContext::~GLContext() = default;
 
 std::unique_ptr<GLContext> GLContext::Create(const WindowInfo& wi, Error* error)
 {
+	fprintf(stderr, "GLContext::Create() entered, wi.type=%d, GLLibretro::Active=%d\n",
+		static_cast<int>(wi.type), GLLibretro::Active);
+	fflush(stderr);
+	
 	static constexpr Version vlist[] = {
 		{Profile::Core, 4, 6},
 		{Profile::Core, 4, 5},

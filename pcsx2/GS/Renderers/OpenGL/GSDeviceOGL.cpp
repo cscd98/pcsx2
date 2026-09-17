@@ -254,12 +254,18 @@ void GSDeviceOGL::SetVSyncMode(GSVSyncMode mode, bool allow_present_throttle)
 
 bool GSDeviceOGL::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 {
+	fprintf(stderr, "GSDeviceOGL::Create() ENTRY\n");
+	fflush(stderr);
+
 	if (!GSDevice::Create(vsync_mode, allow_present_throttle))
 		return false;
 
 	// GL is a pain and needs the window super early to create the context.
 	if (!AcquireWindow(true))
 		return false;
+
+	fprintf(stderr, "GSDeviceOGL::Create() reached, about to call GLContext::Create()\n");
+	fflush(stderr);
 
 	Error error;
 	m_gl_context = GLContext::Create(m_window_info, &error);
